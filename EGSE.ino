@@ -56,6 +56,7 @@ Led_State led2_state = LED_OFF;
 Led_State led3_state = LED_OFF;
 Led_State led4_state = LED_OFF;
 Led_State led5_state = LED_OFF;
+Led_State led6_state = LED_OFF;
 
 void setup() {
   
@@ -214,7 +215,7 @@ void exitDischarging()
 }
 
 //This is the Error/ Monitor State
-errorState(int errnum)
+void errorState(int errnum)
 {
     if (errnum == 0)
     {
@@ -230,7 +231,7 @@ errorState(int errnum)
 
 
 //TODO: See the code doc on the EGSE drive
-errorCont(int errnum)
+void errorCont(int errnum)
 {
     if (errnum == 0)
     {
@@ -405,8 +406,6 @@ void Thread3()
     //No idea what buzzer should do...
     
 }
-
-//Will eventually remove this function lol
 void loop() {
   DateTime now = rtc.now();                   //Updates the date stored in "now"
   
