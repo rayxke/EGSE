@@ -1,9 +1,21 @@
+/*
+    RECONSO Project
+    EGSE Arduino Code
+    Georgia Institute of Technology
+    
+    Notes:  
+            Use Ctrl+f "#TODO" to pick up on where I left off
+
+*/
+
 #include <Wire.h>
 #include <SoftwareSerial.h>
 #include <RTClib.h>
 #include <Adafruit_MCP23017.h>
 
 //EXPANDER PINS ONLY
+
+//#TODO: This is basically an enum. You may want to look into using one (This is fine too tho esp since the comments are helpful)
 #define EGSE_DISABLE_BUS 1  // OUTPUT   Disables bus outputs on the Inhibit board. Prevents high level activation on the cube sat. Used for charging.
 #define EGSE_RESET 2        // OUTPUT   Resets the enture inhibit system. Can be used to unlock the inhibit board if anything happens.
 #define ATTINY_PWR 3        // OUTPUT   Activates the timer chip on the inhibit board. Can be used for programming or for skipping the inhibits to this point.
@@ -47,7 +59,6 @@ RTC_DS3231 rtc;
 
 //Obviously I like enums a little too much....
 enum State{NO_STATE, CHARGE_STATE, DISCHARGE_STATE, INHIBIT_STATE, OFF_STATE, ERROR_STATE}; // Enum for continuing state
-enum Leds {LED1, LED2, LED3, LED4, LED5, LED6};
 enum Led_State { LED_OFF, LED_ON, LED_BLINK};
 
 State state = NO_STATE;
@@ -57,6 +68,7 @@ Led_State led3_state = LED_OFF;
 Led_State led4_state = LED_OFF;
 Led_State led5_state = LED_OFF;
 Led_State led6_state = LED_OFF;
+bool error = false;
 
 void setup() {
   
@@ -184,6 +196,7 @@ void contDischarging()
     else
     {
         //Nothing here...
+        //There should probs be a default here not sure what that should be tho.
     }
 }
 
@@ -215,9 +228,9 @@ void exitDischarging()
 }
 
 //This is the Error/ Monitor State
-void errorState(int errnum)
+void errorState()
 {
-    if (errnum == 0)
+    if (!error)
     {
         led1_state = LED_OFF;
         led6_state = LED_ON;
@@ -230,12 +243,16 @@ void errorState(int errnum)
 }
 
 
-//TODO: See the code doc on the EGSE drive
-void errorCont(int errnum)
+/*#TODO: See the code doc on the EGSE drive
+         Need to flesh out this functionality
+         Also this state may be useless... idk
+*/
+void errorCont()
 {
-    if (errnum == 0)
+    if (!error)
     {
        //Send serial data to the computer
+       Serial.println("Error Test Data"); //#TODO: Will need to implement test
     }
     else
     {
@@ -256,6 +273,7 @@ void offState()
     digitalWrite(ARD_CHARGESELECT, LOW);
     digitalWrite(ARD_DISCHARGE, LOW);
     
+    //#TODO: Change to for loop
     led1_state = LED_OFF;
     led2_state = LED_OFF;
     led3_state = LED_OFF;
@@ -264,90 +282,35 @@ void offState()
     led6_state = LED_OFF;
     
     led1_state = LED_ON;
+    
+    //#TODO:Include while loop for button presses?
 }
 
 //Turn LEDS on or off or blink
-/*There's definitely a better way of doing this....
-  I would look into passing the pin into the function so
-  that there is only a need for one switch statement
+/*#TODO:Make sure pins are being passed correctly
 */
 
-void assignLED(Led_State led_state, Leds leds)
+void assignLED(Led_State led_state, int my_pin)
 {
     switch (led_state)
     {
         case LED_OFF:
         {
-            switch (leds)
-            {
-                case LED1: digitalWrite(IND_LED1,LOW);
-                case LED2: digitalWrite(IND_LED2,LOW);
-                case LED3: digitalWrite(IND_LED3,LOW);
-                case LED4: digitalWrite(IND_LED4,LOW);
-                case LED5: digitalWrite(IND_LED5,LOW);
-                case LED6: digitalWrite(IND_LED6,LOW);
-            }
+            digitalWrite(my_pin, LOW);
+            break;
         }
         case LED_ON:
         {
-            switch (leds)
-            {
-                case LED1: digitalWrite(IND_LED1,HIGH);
-                case LED2: digitalWrite(IND_LED2,HIGH);
-                case LED3: digitalWrite(IND_LED3,HIGH);
-                case LED4: digitalWrite(IND_LED4,HIGH);
-                case LED5: digitalWrite(IND_LED5,HIGH);
-                case LED6: digitalWrite(IND_LED6,HIGH);
-            }
+            digitalWrite(my_pin, HIGH);
+            break;
         }
         case LED_BLINK:
         {
-            switch (leds)
-            {
-                case LED1:
-                {
-                    digitalWrite(IND_LED1,HIGH);
-                    delay(1000);
-                    digitalWrite(IND_LED1,LOW);
-                    delay(1000);
-                }
-                case LED2: 
-                {
-                    digitalWrite(IND_LED2,HIGH);
-                    delay(1000);
-                    digitalWrite(IND_LED2,LOW);
-                    delay(1000);
-                }
-                case LED3:
-                {
-                    digitalWrite(IND_LED3,HIGH);
-                    delay(1000);
-                    digitalWrite(IND_LED3,LOW);
-                    delay(1000);
-                }
-                case LED4:
-                {
-                    digitalWrite(IND_LED4,HIGH);
-                    delay(1000);
-                    digitalWrite(IND_LED4,LOW);
-                    delay(1000);
-                }
-                case LED5:
-                {
-                    digitalWrite(IND_LED5,HIGH);
-                    delay(1000);
-                    digitalWrite(IND_LED5,LOW);
-                    delay(1000);
-                }
-                case LED6:
-                {
-                    digitalWrite(IND_LED6,HIGH);
-                    delay(1000);
-                    digitalWrite(IND_LED6,LOW);
-                    delay(1000);
-                }
-            }
-            
+            digitalWrite(my_pin, HIGH);
+            delay(1000);
+            digitalWrite(my_pin, LOW);
+            delay(1000);
+            break;
         }
     }
 }
@@ -361,22 +324,23 @@ void Thread1()
     {
         case CHARGE_STATE:
         {
-            if (state == OFF)
-            {
-                //Figure This out later
-            }
+            contCharging();
+            break;
         }
         case DISCHARGE_STATE:
         {
-            
+            contDischarging();
+            break;
         }
-        case INHIBIT_STATE:
+        case OFF_STATE:
         {
-            
+            offState();
+            break;
         }
         case ERROR_STATE:
         {
-            
+            errorCont();
+            break;
         }
     }
     
@@ -395,17 +359,19 @@ void Thread3()
     inhibit   = digitalRead(SW3_DET);
     
     //Assign Light Values
-    //This can be turned into a for loop
-    assignLED(led1_state, LED1);
-    assignLED(led2_state, LED2);
-    assignLED(led3_state, LED3);
-    assignLED(led4_state, LED4);
-    assignLED(led5_state, LED5);
-    assignLED(led6_state, LED6);
+    //#TODO:This can be turned into a for loop
+    assignLED(led1_state, IND_LED1);
+    assignLED(led2_state, IND_LED2);
+    assignLED(led3_state, IND_LED3);
+    assignLED(led4_state, IND_LED4);
+    assignLED(led5_state, IND_LED5);
+    assignLED(led6_state, IND_LED6);
     
-    //No idea what buzzer should do...
+    //#TODO: No idea what buzzer should do...
     
 }
+
+//Main loop of the fucntion
 void loop() {
   DateTime now = rtc.now();                   //Updates the date stored in "now"
   
