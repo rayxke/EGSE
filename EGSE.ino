@@ -17,6 +17,7 @@
 #define VERSION 1.21       // Program Version
 #define LED_REFRESH_RATE 2 // (Value in Hz)
 #define ERROR_BLOCK false  // Defines whether an error connecting to the RTC or MCP blocks startup
+#define SERIAL_ECHO true   // Causes the terminal to echo every character sent to it
 
 #define MCP23017_ADDRESS 0x20
 uint8_t i2caddr = 0;
@@ -68,6 +69,7 @@ RTC_DS3231 rtc;
 
 // Command Defs:
 String inputString = "";
+String inputString2 = "";
 String temp = "";
 String commandWord = "";
 bool stringComplete = false;
@@ -109,6 +111,7 @@ void setup() {
   serialWelcome();
   Serial.println(F("\nEGSE Init.."));
   inputString.reserve(200);
+  inputString2.reserve(200);
   temp.reserve(25);
   commandWord.reserve(25);
 
@@ -457,8 +460,9 @@ void loop() {
     pos = 0;
     newPos = 0;
     done = false;
-    inputString.trim();
-    Serial.println(inputString);
+    //inputString.trim();
+    Serial.println();
+    //Serial.println(inputString);
     commandTree();
     Serial.print("\n> ");
 

@@ -19,6 +19,9 @@ void powerSafe(){
   digitalWrite(ARD_MAINBAT,LOW);
   digitalWrite(ARD_BATSELECT,LOW);
   digitalWrite(ARD_CHARGE_DIS,LOW);
+  toggles[0] = true;
+  toggles[1] = true;
+  toggles[2] = true;
   Serial.println("> Deactivate Relays");
 }
 
